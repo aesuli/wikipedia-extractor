@@ -61,7 +61,8 @@ import urllib
 import re
 import bz2
 import os.path
-from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
+import codecs
 
 ### PARAMS ####################################################################
 
@@ -97,6 +98,9 @@ discardElements = set([
         'ref', 'references', 'img', 'imagemap', 'source'
         ])
 
+sys.stdout = codecs.getwriter('utf8')(sys.stdout.buffer)
+sys.stdin = codecs.getreader('utf8')(sys.stdin.buffer)
+
 #=========================================================================
 #
 # MediaWiki Markup Grammar
@@ -121,14 +125,13 @@ def WikiDocument(out, id, title, text):
     header = '<doc id="%s" url="%s" title="%s">\n' % (id, url, title)
     # Separate header from text with a newline.
     header += title + '\n'
-    header = header.encode('utf-8')
     text = clean(text)
-    footer = "\n</doc>"
+    footer = "\n</doc>\n"
     out.reserve(len(header) + len(text) + len(footer))
-    print >> out, header
+    print(header, end="", file=out)
     for line in compact(text):
-        print >> out, line.encode('utf-8')
-    print >> out, footer
+        print(line, end="", file=out)
+    print(footer, end="", file=out)
 
 def get_url(id, prefix):
     return "%s?curid=%s" % (prefix, id)
@@ -463,9 +466,12 @@ def compact(text):
                 title += '.'
             headers[lev] = title
             # drop previous headers
+            todel = []
             for i in headers.keys():
                 if i > lev:
-                    del headers[i]
+                    todel.append(i)
+            for odel in todel:
+                del headers[odel]
             emptySection = True
             continue
         # Handle page title
@@ -489,7 +495,7 @@ def compact(text):
             continue
         elif len(headers):
             items = headers.items()
-            items.sort()
+            sorted(items)
             for (i, v) in items:
                 page.append(v)
             headers.clear()
@@ -523,7 +529,7 @@ class OutputSplitter:
             self.out_file = self.open_next_file()
 
     def write(self, text):
-        self.out_file.write(text)
+        self.out_file.write(bytes(text, 'UTF-8'))
 
     def close(self):
         self.out_file.close()
@@ -540,7 +546,7 @@ class OutputSplitter:
         if self.compress:
             return bz2.BZ2File(file_name + '.bz2', 'w')
         else:
-            return open(file_name, 'w')
+            return open(file_name, 'w', encoding="utf-8")
 
     def dir_name(self):
         char1 = self.dir_index % 26
@@ -562,7 +568,6 @@ def process_data(input, output):
     inText = False
     redirect = False
     for line in input:
-        line = line.decode('utf-8')
         tag = ''
         if '<' in line:
             m = tagRE.search(line)
@@ -593,7 +598,7 @@ def process_data(input, output):
             colon = title.find(':')
             if (colon < 0 or title[:colon] in acceptedNamespaces) and \
                     not redirect:
-                print id, title.encode('utf-8')
+                print(id, title)
                 sys.stdout.flush()
                 WikiDocument(output, id, title, ''.join(page))
             id = None
@@ -607,10 +612,10 @@ def process_data(input, output):
 ### CL INTERFACE ############################################################
 
 def show_help():
-    print >> sys.stdout, __doc__,
+    print( __doc__)
 
 def show_usage(script_name):
-    print >> sys.stderr, 'Usage: %s [options]' % script_name
+    print ( 'Usage: %s [options]' % script_name)
 
 ##
 # Minimum size of output files
@@ -653,15 +658,14 @@ def main():
                     file_size = int(arg)
                 if file_size < minFileSize: raise ValueError()
             except ValueError:
-                print >> sys.stderr, \
-                '%s: %s: Insufficient or invalid size' % (script_name, arg)
+                print('%s: %s: Insufficient or invalid size' % (script_name, arg))
                 sys.exit(2)
         elif opt in ('-n', '--ns'):
                 acceptedNamespaces = set(arg.split(','))
         elif opt in ('-o', '--output'):
                 output_dir = arg
         elif opt in ('-v', '--version'):
-                print 'WikiExtractor.py version:', version
+                print( 'WikiExtractor.py version:', version)
                 sys.exit(0)
 
     if len(args) > 0:
@@ -672,7 +676,7 @@ def main():
         try:
             os.makedirs(output_dir)
         except:
-            print >> sys.stderr, 'Could not create: ', output_dir
+            print ( 'Could not create: ', output_dir)
             return
 
     if not keepLinks:
