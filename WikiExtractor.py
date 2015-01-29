@@ -124,8 +124,7 @@ def WikiDocument(out, id, title, text):
     url = get_url(id, prefix)
     header = '<doc id="%s" url="%s" title="%s">\n' % (id, url, title)
     # Separate header from text with a newline.
-    header += title + '\n'
-    text = clean(text)
+    text = clean(title + '. \n' + text)
     footer = "\n</doc>\n"
     out.reserve(len(header) + len(text) + len(footer))
     print(header, end="", file=out)
@@ -217,6 +216,8 @@ comment = re.compile(r'<!--.*?-->', re.DOTALL)
 discard_element_patterns = []
 for tag in discardElements:
     pattern = re.compile(r'<\s*%s\b[^>]*>.*?<\s*/\s*%s>' % (tag, tag), re.DOTALL | re.IGNORECASE)
+    discard_element_patterns.append(pattern)
+    pattern = re.compile(r'<\s*%s\b[^>]\s*/\s*>' % tag, re.DOTALL | re.IGNORECASE)
     discard_element_patterns.append(pattern)
 
 # Match ignored tags
@@ -390,6 +391,9 @@ def clean(text):
     # do it again (&amp;nbsp;)
     text = unescape(text)
 
+    import html
+    text = html.unescape(text)
+
     # Collect spans
 
     matches = []
@@ -440,6 +444,7 @@ def clean(text):
     text = re.sub(u'(\[\(Â«) ', r'\1', text)
     text = re.sub(r'\n\W+?\n', '\n', text) # lines with only punctuations
     text = text.replace(',,', ',').replace(',.', '.')
+
     return text
 
 section = re.compile(r'(==+)\s*(.*?)\s*\1')
@@ -529,7 +534,7 @@ class OutputSplitter:
             self.out_file = self.open_next_file()
 
     def write(self, text):
-        self.out_file.write(bytes(text, 'UTF-8'))
+        self.out_file.write(text)
 
     def close(self):
         self.out_file.close()
