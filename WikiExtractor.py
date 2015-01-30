@@ -554,9 +554,7 @@ class OutputSplitter:
             return open(file_name, 'w', encoding="utf-8")
 
     def dir_name(self):
-        char1 = self.dir_index % 26
-        char2 = self.dir_index / 26 % 26
-        return os.path.join(self.path_name, '%c%c' % (ord('A') + char2, ord('A') + char1))
+        return os.path.join(self.path_name, '%03d' % self.dir_index)
 
     def file_name(self):
         return 'wiki_%02d' % self.file_index
@@ -638,7 +636,7 @@ def main():
         sys.exit(1)
 
     compress = False
-    file_size = 500 * 1024
+    file_size = 10 * 1024 * 1024
     output_dir = '.'
 
     for opt, arg in opts:
