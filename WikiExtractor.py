@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
+# Ported by Andrea Esuli (andrea@esuli.it) to python 3.4, improved HTML entities
+# conversion, UTF-8 handling.
+#
 # =============================================================================
 #  Version: 2.6 (Oct 14, 2013)
 #  Author: Giuseppe Attardi (attardi@di.unipi.it), University of Pisa
