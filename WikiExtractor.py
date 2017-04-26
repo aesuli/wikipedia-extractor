@@ -537,7 +537,10 @@ class OutputSplitter:
             self.out_file = self.open_next_file()
 
     def write(self, text):
-        self.out_file.write(text)
+        if self.compress:
+            self.out_file.write(text.encode())
+        else:
+            self.out_file.write(text)
 
     def close(self):
         self.out_file.close()
